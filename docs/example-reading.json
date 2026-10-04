@@ -1,0 +1,62 @@
+{
+  "id": "snow-storage-example",
+  "title": "雪をどこに置くか",
+  "intro": "北海道の家で冬を迎える前に考えておきたい、屋根からの落雪と雪を置く場所についての練習用サンプルです。",
+  "paragraphs": [
+    [
+      {"text": "北海道", "reading": "ほっかいどう", "meaning": "Hokkaido"},
+      {"text": "の住宅では、冬になると雪を「どう"},
+      {"text": "除雪", "reading": "じょせつ", "meaning": "snow removal"},
+      {"text": "するか」だけでなく、「どこに置くか」も重要になる。広い"},
+      {"text": "敷地", "reading": "しきち", "meaning": "site; plot; premises"},
+      {"text": "があっても、"},
+      {"text": "駐車場", "reading": "ちゅうしゃじょう", "meaning": "parking area"},
+      {"text": "や庭、玄関までの通路を確保すると、実際に雪を積める場所は意外と限られる。春まで雪が残ることを考え、秋のうちに"},
+      {"text": "雪置き場", "reading": "ゆきおきば", "meaning": "place designated for piled snow"},
+      {"text": "を決めておくと作業がしやすい。"}
+    ],
+    [
+      {"text": "特に注意したいのが屋根からの"},
+      {"text": "落雪", "reading": "らくせつ", "meaning": "snow falling or sliding from a roof"},
+      {"text": "だ。気温が上がると、屋根に積もった雪が一度に滑り落ちることがある。そのため、落雪する可能性のある場所には、人がよく通る"},
+      {"text": "動線", "reading": "どうせん", "meaning": "circulation route; path of movement"},
+      {"text": "や車、大切な"},
+      {"text": "樹木", "reading": "じゅもく", "meaning": "tree"},
+      {"text": "などを"},
+      {"text": "配置", "reading": "はいち", "meaning": "arrangement; placement"},
+      {"text": "しないほうがよい。雪の重さは想像以上で、低い塀や庭木が"},
+      {"text": "破損", "reading": "はそん", "meaning": "damage; breakage"},
+      {"text": "する原因にもなる。"}
+    ],
+    [
+      {"text": "また、自分の"},
+      {"text": "敷地", "reading": "しきち", "meaning": "property; site"},
+      {"text": "の雪を道路や"},
+      {"text": "隣地", "reading": "りんち", "meaning": "adjacent property"},
+      {"text": "へ出せるとは"},
+      {"text": "限らない", "reading": "かぎらない", "meaning": "not necessarily; not always"},
+      {"text": "。雪が少ない時期には問題がなくても、"},
+      {"text": "積雪", "reading": "せきせつ", "meaning": "accumulated snow; snow cover"},
+      {"text": "が増えるにつれて通路が狭くなり、日常生活に"},
+      {"text": "支障", "reading": "ししょう", "meaning": "hindrance; disruption"},
+      {"text": "が出る場合もある。住宅を購入した最初の冬は、雪がどこに"},
+      {"text": "溜まる", "reading": "たまる", "meaning": "accumulate; collect"},
+      {"text": "かを観察しながら、翌年の計画に生かすとよい。"}
+    ],
+    [
+      {"text": "例えば、春に庭や"},
+      {"text": "駐車場", "reading": "ちゅうしゃじょう", "meaning": "parking area"},
+      {"text": "を改修するなら、冬に記録した雪の"},
+      {"text": "動き", "reading": "うごき", "meaning": "movement; behaviour"},
+      {"text": "をもとに"},
+      {"text": "設計", "reading": "せっけい", "meaning": "design; planning"},
+      {"text": "を見直すことができる。雪置き場を少し広げたり、車の"},
+      {"text": "位置", "reading": "いち", "meaning": "position; location"},
+      {"text": "を変えたりするだけでも、毎日の除雪にかかる"},
+      {"text": "手間", "reading": "てま", "meaning": "time and effort; trouble"},
+      {"text": "を"},
+      {"text": "減らす", "reading": "へらす", "meaning": "reduce; decrease something"},
+      {"text": "ことができる。"}
+    ]
+  ]
+}
