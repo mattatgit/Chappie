@@ -84,7 +84,7 @@ For Japanese, existing Stage 1 input remains valid:
 
 ## Local development
 
-Requires Node 20+.
+Requires Node 22.19+.
 
 ```bash
 npm install
@@ -109,7 +109,19 @@ Run MCP Inspector with:
 npm run inspect
 ```
 
-For a real ChatGPT test, expose the server via HTTPS or deploy it, then add the HTTPS `/mcp` endpoint as a developer plugin connection.
+## Deploy for ChatGPT testing
+
+The Stage 2 branch includes a Render Blueprint (`render.yaml`) for a small public HTTPS deployment.
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/mattatgit/Chappie/tree/stage-2-mcp-wrapper)
+
+After deployment, use the service's HTTPS URL plus `/mcp` as the MCP endpoint in ChatGPT developer mode, for example:
+
+```text
+https://<your-service>.onrender.com/mcp
+```
+
+The root URL (`/`) is the deployment health check.
 
 ## Repository layout
 
@@ -118,7 +130,10 @@ Chappie/
 ├── .github/workflows/ci.yml
 ├── README.md
 ├── package.json
+├── render.yaml
 ├── server.js
+├── scripts/
+│   └── mcp-smoke.mjs
 ├── docs/
 │   ├── behaviour-spec.md
 │   ├── decisions.md
