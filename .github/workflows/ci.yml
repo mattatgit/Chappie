@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main, stage-2-mcp-wrapper]
+  pull_request:
+
+jobs:
+  stage-2-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm install
+      - run: node --check server.js
+      - name: Start MCP server and check health endpoint
+        run: |
+          node server.js > /tmp/chappie.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID' EXIT
+          for i in {1..20}; do
+            if curl --fail --silent http://127.0.0.1:8787/ | grep -q "Chappie MCP Apps server"; then
+              exit 0
+            fi
+            sleep 0.5
+          done
+          cat /tmp/chappie.log
+          exit 1
