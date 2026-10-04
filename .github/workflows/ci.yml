@@ -12,19 +12,32 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - run: npm install
-      - run: node --check server.js
-      - name: Start MCP server and check health endpoint
+      - run: |
+          node --check server.js
+          node --check scripts/mcp-smoke.mjs
+      - name: Start MCP server and exercise MCP tools
         run: |
           node server.js > /tmp/chappie.log 2>&1 &
           SERVER_PID=$!
-          trap 'kill $SERVER_PID' EXIT
+          trap 'kill $SERVER_PID 2>/dev/null || true' EXIT
+
+          READY=0
           for i in {1..20}; do
             if curl --fail --silent http://127.0.0.1:8787/ | grep -q "Chappie MCP Apps server"; then
-              exit 0
+              READY=1
+              break
             fi
             sleep 0.5
           done
-          cat /tmp/chappie.log
-          exit 1
+
+          if [ "$READY" -ne 1 ]; then
+            cat /tmp/chappie.log
+            exit 1
+          fi
+
+          if ! npm run smoke:mcp; then
+            cat /tmp/chappie.log
+            exit 1
+          fi
