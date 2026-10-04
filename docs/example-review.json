@@ -1,0 +1,91 @@
+{
+  "id": "snow-storage-review-example",
+  "title": "雪置き場と住宅配置の復習",
+  "intro": "本文は見返さずに答えてください。自由入力は文字列一致では採点せず、回答後に意味的レビューへ回します。",
+  "questions": [
+    {
+      "id": "q1",
+      "type": "text",
+      "label": "読み",
+      "prompt": "雪置き場 の読み方をひらがなで書いてください。",
+      "reviewHint": "Expected core knowledge: ゆきおきば. Accept explanatory text and partial knowledge for semantic review."
+    },
+    {
+      "id": "q2",
+      "type": "text",
+      "label": "漢字",
+      "prompt": "「しきち」を漢字で書いてください。例：自分の＿＿内に雪を置く。",
+      "reviewHint": "Expected core knowledge: 敷地. Do not exact-string grade free text."
+    },
+    {
+      "id": "q3",
+      "type": "text",
+      "label": "語彙",
+      "prompt": "支障 の読み方と意味を書いてください。英語で意味を書いても構いません。",
+      "reviewHint": "Expected: ししょう; hindrance / obstacle / disruption. Useful collocations: 支障が出る, 支障をきたす."
+    },
+    {
+      "id": "q4",
+      "type": "text",
+      "label": "漢字",
+      "prompt": "「はいち」を漢字で書いてください。例：落雪する場所には車を＿＿しない。",
+      "reviewHint": "Expected core knowledge: 配置."
+    },
+    {
+      "id": "q5",
+      "type": "multiple_choice",
+      "label": "減らす vs 減る",
+      "prompt": "最も自然な文を選んでください。",
+      "options": [
+        {"value": "a", "label": "雪置き場を広げると、除雪の手間を減ります。"},
+        {"value": "b", "label": "雪置き場を広げると、除雪の手間を減らすことができます。"},
+        {"value": "c", "label": "雪置き場を広げると、除雪の手間が減らします。"},
+        {"value": "d", "label": "雪置き場を広げると、除雪の手間に減らします。"}
+      ],
+      "answer": "b",
+      "explanation": "「減らす」は他動詞なので「手間を減らす」。自動詞なら「手間が減る」となります。"
+    },
+    {
+      "id": "q6",
+      "type": "multiple_choice",
+      "label": "文法",
+      "prompt": "「自分の敷地の雪を道路や隣地へ出せるとは限らない」の意味として最も近いものは？",
+      "options": [
+        {"value": "a", "label": "道路や隣地には絶対に雪を出してはいけない。"},
+        {"value": "b", "label": "道路や隣地にはいつでも雪を出してよい。"},
+        {"value": "c", "label": "道路や隣地へ雪を出せるとは必ずしも言えない。"},
+        {"value": "d", "label": "道路より隣地に雪を出すほうがよい。"}
+      ],
+      "answer": "c",
+      "explanation": "「〜とは限らない」は「必ずそうだとは言えない / not necessarily」という意味です。"
+    },
+    {
+      "id": "q7",
+      "type": "text",
+      "label": "間隔反復",
+      "prompt": "破損 の読み方を書いてください。余裕があれば、短い意味も付けてください。",
+      "reviewHint": "Expected: はそん; damage / breakage. Related: 破壊, 損傷, 損失."
+    },
+    {
+      "id": "q8",
+      "type": "multiple_choice",
+      "label": "読解",
+      "prompt": "本文では、住宅を購入した最初の冬に雪の溜まり方を観察することをなぜ勧めていましたか？",
+      "options": [
+        {"value": "a", "label": "雪の量から土地の価格を判断するため。"},
+        {"value": "b", "label": "毎年同じ場所に庭木を植えるため。"},
+        {"value": "c", "label": "屋根の雪をすべて自然に溶かすため。"},
+        {"value": "d", "label": "翌年以降の庭や駐車場、雪置き場の計画に生かすため。"}
+      ],
+      "answer": "d",
+      "explanation": "雪の溜まり方や動きを観察して、翌年以降の庭・駐車場・雪置き場の配置改善に生かすためです。"
+    },
+    {
+      "id": "q9",
+      "type": "textarea",
+      "label": "実用表現",
+      "prompt": "造園業者に自然で丁寧に聞いてください：『雪置き場をもう少し広くすれば、毎日の除雪の手間を減らせますか。』",
+      "reviewHint": "Assess naturalness and politeness semantically. Natural answers include 雪置き場を少し／もう少し広げれば、除雪の手間を減らせますか and consultative variants such as 毎日の除雪が楽になりそうですか."
+    }
+  ]
+}
