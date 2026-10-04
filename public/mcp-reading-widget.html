@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chappie reading</title>
+<style>
+:root{color-scheme:light dark;--text:#1f2328;--muted:#667085;--border:#d0d5dd;--card:#fff;--panel:#f8fafc;--accent:#2563eb}
+@media(prefers-color-scheme:dark){:root{--text:#f5f7fa;--muted:#a8b0bd;--border:#3a4350;--card:#171a1f;--panel:#22262d;--accent:#7aa2ff}}
+*{box-sizing:border-box}body{margin:0;padding:20px;background:transparent;color:var(--text);font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.reading{width:100%;max-width:736px;margin:0 auto}.intro{margin:0 0 12px;color:var(--muted);font-size:14px;line-height:1.55}.card{position:relative;border:1px solid var(--border);border-radius:12px;padding:20px;background:var(--card)}h2{margin:0 0 16px;font-size:17px}.paragraph{margin:0 0 20px;font-size:18px;line-height:2.7}.paragraph:last-of-type{margin-bottom:0}.term{position:relative;display:inline-block;cursor:pointer;border-bottom:1px dotted var(--muted);outline:none;border-radius:3px}.term:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.hint{position:absolute;left:50%;bottom:80%;transform:translateX(-50%);opacity:0;white-space:nowrap;pointer-events:none;color:var(--muted);font-size:10px;line-height:1;transition:opacity 90ms ease-out}.term.is-selected .hint,.term:focus .hint{opacity:1}@media(hover:hover) and (pointer:fine){.term:hover .hint{opacity:1}}.tip{position:absolute;z-index:30;max-width:min(285px,calc(100% - 16px));padding:9px 11px;border:1px solid var(--border);border-radius:9px;background:var(--panel);box-shadow:0 4px 14px rgba(0,0,0,.14);font-size:13px;line-height:1.45}.tip[hidden]{display:none}.tip-primary{margin-bottom:2px;font-weight:650}.empty{color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<div id="app" class="empty">Loading reading…</div>
+<script type="module">
+const app = document.getElementById("app");
+let rpcId=0; const pending=new Map();
+const request=(method,params)=>new Promise((resolve,reject)=>{const id=++rpcId;pending.set(id,{resolve,reject});window.parent.postMessage({jsonrpc:"2.0",id,method,params},"*")});
+const notify=(method,params)=>window.parent.postMessage({jsonrpc:"2.0",method,params},"*");
+
+window.addEventListener("message",event=>{
+  if(event.source!==window.parent)return; const message=event.data;
+  if(!message||message.jsonrpc!=="2.0")return;
+  if(typeof message.id==="number"){
+    const p=pending.get(message.id); if(!p)return; pending.delete(message.id);
+    message.error?p.reject(message.error):p.resolve(message.result); return;
+  }
+  if(message.method==="ui/notifications/tool-result") renderFromResult(message.params);
+});
+
+function normalize(segment){
+  const a=segment?.annotation||{};
+  return {
+    text:segment?.text||"",
+    primary:segment?.reading||a.pronunciation||a.reading||a.translation||"",
+    meaning:segment?.meaning||a.meaning||a.translation||""
+  };
+}
+
+function renderFromResult(result){
+  const data=result?.structuredContent?.reading;
+  if(data) mount(data);
+}
+
+function makeTerm(segment){
+  const n=normalize(segment); const term=document.createElement("span");
+  term.className="term"; term.tabIndex=0; term.setAttribute("role","button");
+  term.dataset.primary=n.primary; term.dataset.meaning=n.meaning;
+  term.append(document.createTextNode(n.text));
+  const hint=document.createElement("span"); hint.className="hint"; hint.textContent=n.primary; hint.setAttribute("aria-hidden","true"); term.append(hint);
+  return term;
+}
+
+function mount(data){
+  app.className=""; app.replaceChildren();
+  const shell=document.createElement("section"); shell.className="reading";
+  if(data.intro){const intro=document.createElement("p");intro.className="intro";intro.textContent=data.intro;shell.append(intro)}
+  const card=document.createElement("div");card.className="card";
+  if(data.title){const title=document.createElement("h2");title.textContent=data.title;card.append(title)}
+  for(const paragraph of data.paragraphs||[]){
+    const p=document.createElement("p");p.className="paragraph";
+    for(const segment of paragraph||[]){const n=normalize(segment); if(n.primary||n.meaning)p.append(makeTerm(segment));else p.append(document.createTextNode(n.text))}
+    card.append(p);
+  }
+  const tip=document.createElement("div");tip.className="tip";tip.hidden=true;tip.setAttribute("role","tooltip");
+  const primary=document.createElement("div");primary.className="tip-primary";const meaning=document.createElement("div");tip.append(primary,meaning);card.append(tip);shell.append(card);app.append(shell);
+  let active=null;
+  const hide=()=>{if(active)active.classList.remove("is-selected");active=null;tip.hidden=true};
+  const position=()=>{if(!active||tip.hidden)return;const c=card.getBoundingClientRect(),t=active.getBoundingClientRect();let left=t.left-c.left+t.width/2-tip.offsetWidth/2;left=Math.max(8,Math.min(left,card.clientWidth-tip.offsetWidth-8));let top=t.bottom-c.top+8;if(top+tip.offsetHeight>card.clientHeight-8)top=t.top-c.top-tip.offsetHeight-8;tip.style.left=`${left}px`;tip.style.top=`${Math.max(8,top)}px`};
+  const show=term=>{if(active&&active!==term)active.classList.remove("is-selected");active=term;term.classList.add("is-selected");primary.textContent=term.dataset.primary||"";meaning.textContent=term.dataset.meaning||"";tip.hidden=false;requestAnimationFrame(position)};
+  card.querySelectorAll(".term").forEach(term=>{
+    term.addEventListener("click",()=>active===term?hide():show(term));
+    term.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();active===term?hide():show(term)}else if(e.key==="Escape"){hide();term.blur()}});
+  });
+  document.onclick=e=>{if(e.target instanceof Element&&!e.target.closest(".term")&&!e.target.closest(".tip"))hide()};
+  window.onresize=()=>requestAnimationFrame(position);
+}
+
+(async()=>{
+  try{
+    await request("ui/initialize",{appInfo:{name:"chappie-reading",version:"0.2.0"},appCapabilities:{},protocolVersion:"2026-01-26"});
+    notify("ui/notifications/initialized",{});
+  }catch(error){console.error("Chappie reading bridge initialization failed",error);app.textContent="Unable to initialize the Chappie reading component."}
+})();
+</script>
+</body>
+</html>
