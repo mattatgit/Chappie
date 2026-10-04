@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chappie — Interactive reading reference</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --ch-text: var(--viz-text, #1f2328);
+  --ch-muted: var(--viz-muted, #667085);
+  --ch-border: var(--viz-border, #d0d5dd);
+  --ch-card: var(--viz-card, #ffffff);
+  --ch-panel: var(--viz-panel, #f8fafc);
+  --ch-accent: var(--viz-accent, #2563eb);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ch-text: var(--viz-text, #f5f7fa);
+    --ch-muted: var(--viz-muted, #a8b0bd);
+    --ch-border: var(--viz-border, #3a4350);
+    --ch-card: var(--viz-card, #171a1f);
+    --ch-panel: var(--viz-panel, #22262d);
+    --ch-accent: var(--viz-accent, #7aa2ff);
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 24px;
+  background: transparent;
+  color: var(--ch-text);
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.ch-reading {
+  width: 100%;
+  max-width: 736px;
+  margin: 0 auto;
+}
+.ch-reading__intro {
+  margin: 0 0 12px;
+  color: var(--ch-muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+.ch-reading__card {
+  position: relative;
+  border: 1px solid var(--ch-border);
+  border-radius: 12px;
+  padding: 20px;
+  background: var(--ch-card);
+}
+.ch-reading__title {
+  margin: 0 0 16px;
+  font-size: 17px;
+  font-weight: 650;
+}
+.ch-reading__paragraph {
+  margin: 0 0 20px;
+  font-size: 18px;
+  line-height: 2.7;
+}
+.ch-reading__paragraph:last-of-type { margin-bottom: 0; }
+.ch-term {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  border-bottom: 1px dotted var(--ch-muted);
+  outline: none;
+  border-radius: 3px;
+}
+.ch-term:focus-visible {
+  outline: 2px solid var(--ch-accent);
+  outline-offset: 2px;
+}
+.ch-furi {
+  position: absolute;
+  left: 50%;
+  bottom: 80%;
+  transform: translateX(-50%);
+  opacity: 0;
+  white-space: nowrap;
+  pointer-events: none;
+  color: var(--ch-muted);
+  font-size: 10px;
+  line-height: 1;
+  transition: opacity 90ms ease-out;
+}
+.ch-term.is-selected .ch-furi,
+.ch-term:focus .ch-furi { opacity: 1; }
+@media (hover: hover) and (pointer: fine) {
+  .ch-term:hover .ch-furi { opacity: 1; }
+}
+.ch-tip {
+  position: absolute;
+  z-index: 30;
+  max-width: min(285px, calc(100% - 16px));
+  padding: 9px 11px;
+  border: 1px solid var(--ch-border);
+  border-radius: 9px;
+  background: var(--ch-panel);
+  color: var(--ch-text);
+  box-shadow: 0 4px 14px rgba(0,0,0,.14);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.ch-tip[hidden] { display: none; }
+.ch-tip__reading { margin-bottom: 2px; font-weight: 650; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(() => {
+  const sampleReading = {
+    id: "snow-storage-example",
+    title: "雪をどこに置くか",
+    intro: "北海道の家で冬を迎える前に考えておきたい、屋根からの落雪と雪を置く場所についての練習用サンプルです。",
+    paragraphs: [
+      [
+        { text: "北海道", reading: "ほっかいどう", meaning: "Hokkaido" },
+        { text: "の住宅では、冬になると雪を「どう" },
+        { text: "除雪", reading: "じょせつ", meaning: "snow removal" },
+        { text: "するか」だけでなく、「どこに置くか」も重要になる。広い" },
+        { text: "敷地", reading: "しきち", meaning: "site; plot; premises" },
+        { text: "があっても、" },
+        { text: "駐車場", reading: "ちゅうしゃじょう", meaning: "parking area" },
+        { text: "や庭、玄関までの通路を確保すると、実際に雪を積める場所は意外と限られる。春まで雪が残ることを考え、秋のうちに" },
+        { text: "雪置き場", reading: "ゆきおきば", meaning: "place designated for piled snow" },
+        { text: "を決めておくと作業がしやすい。" }
+      ],
+      [
+        { text: "特に注意したいのが屋根からの" },
+        { text: "落雪", reading: "らくせつ", meaning: "snow falling or sliding from a roof" },
+        { text: "だ。気温が上がると、屋根に積もった雪が一度に滑り落ちることがある。そのため、落雪する可能性のある場所には、人がよく通る" },
+        { text: "動線", reading: "どうせん", meaning: "circulation route; path of movement" },
+        { text: "や車、大切な" },
+        { text: "樹木", reading: "じゅもく", meaning: "tree" },
+        { text: "などを" },
+        { text: "配置", reading: "はいち", meaning: "arrangement; placement" },
+        { text: "しないほうがよい。雪の重さは想像以上で、低い塀や庭木が" },
+        { text: "破損", reading: "はそん", meaning: "damage; breakage" },
+        { text: "する原因にもなる。" }
+      ],
+      [
+        { text: "また、自分の" },
+        { text: "敷地", reading: "しきち", meaning: "property; site" },
+        { text: "の雪を道路や" },
+        { text: "隣地", reading: "りんち", meaning: "adjacent property" },
+        { text: "へ出せるとは" },
+        { text: "限らない", reading: "かぎらない", meaning: "not necessarily; not always" },
+        { text: "。雪が少ない時期には問題がなくても、" },
+        { text: "積雪", reading: "せきせつ", meaning: "accumulated snow; snow cover" },
+        { text: "が増えるにつれて通路が狭くなり、日常生活に" },
+        { text: "支障", reading: "ししょう", meaning: "hindrance; disruption" },
+        { text: "が出る場合もある。住宅を購入した最初の冬は、雪がどこに" },
+        { text: "溜まる", reading: "たまる", meaning: "accumulate; collect" },
+        { text: "かを観察しながら、翌年の計画に生かすとよい。" }
+      ],
+      [
+        { text: "例えば、春に庭や" },
+        { text: "駐車場", reading: "ちゅうしゃじょう", meaning: "parking area" },
+        { text: "を改修するなら、冬に記録した雪の" },
+        { text: "動き", reading: "うごき", meaning: "movement; behaviour" },
+        { text: "をもとに" },
+        { text: "設計", reading: "せっけい", meaning: "design; planning" },
+        { text: "を見直すことができる。雪置き場を少し広げたり、車の" },
+        { text: "位置", reading: "いち", meaning: "position; location" },
+        { text: "を変えたりするだけでも、毎日の除雪にかかる" },
+        { text: "手間", reading: "てま", meaning: "time and effort; trouble" },
+        { text: "を" },
+        { text: "減らす", reading: "へらす", meaning: "reduce; decrease something" },
+        { text: "ことができる。" }
+      ]
+    ]
+  };
+
+  function makeTerm(segment) {
+    const term = document.createElement("span");
+    term.className = "ch-term";
+    term.tabIndex = 0;
+    term.setAttribute("role", "button");
+    term.dataset.reading = segment.reading || "";
+    term.dataset.meaning = segment.meaning || "";
+    term.append(document.createTextNode(segment.text));
+
+    const furi = document.createElement("span");
+    furi.className = "ch-furi";
+    furi.textContent = segment.reading || "";
+    furi.setAttribute("aria-hidden", "true");
+    term.append(furi);
+    return term;
+  }
+
+  function mount(root, data) {
+    if (!root) throw new Error("ChappieReading.mount requires a root element");
+    if (root.__chappieCleanup) root.__chappieCleanup();
+    root.replaceChildren();
+
+    const shell = document.createElement("section");
+    shell.className = "ch-reading";
+    shell.dataset.readingId = data.id || "";
+
+    if (data.intro) {
+      const intro = document.createElement("p");
+      intro.className = "ch-reading__intro";
+      intro.textContent = data.intro;
+      shell.append(intro);
+    }
+
+    const card = document.createElement("div");
+    card.className = "ch-reading__card";
+
+    if (data.title) {
+      const title = document.createElement("h2");
+      title.className = "ch-reading__title";
+      title.textContent = data.title;
+      card.append(title);
+    }
+
+    (data.paragraphs || []).forEach(paragraph => {
+      const p = document.createElement("p");
+      p.className = "ch-reading__paragraph";
+      (paragraph || []).forEach(segment => {
+        if (segment && segment.reading) p.append(makeTerm(segment));
+        else p.append(document.createTextNode(segment?.text || ""));
+      });
+      card.append(p);
+    });
+
+    const tip = document.createElement("div");
+    tip.className = "ch-tip";
+    tip.hidden = true;
+    tip.setAttribute("role", "tooltip");
+
+    const tipReading = document.createElement("div");
+    tipReading.className = "ch-tip__reading";
+    const tipMeaning = document.createElement("div");
+    tipMeaning.className = "ch-tip__meaning";
+    tip.append(tipReading, tipMeaning);
+    card.append(tip);
+    shell.append(card);
+    root.append(shell);
+
+    let active = null;
+
+    function hide() {
+      if (active) active.classList.remove("is-selected");
+      active = null;
+      tip.hidden = true;
+    }
+
+    function positionTip() {
+      if (!active || tip.hidden) return;
+      const cardRect = card.getBoundingClientRect();
+      const termRect = active.getBoundingClientRect();
+      const tipWidth = tip.offsetWidth;
+      const tipHeight = tip.offsetHeight;
+
+      let left = termRect.left - cardRect.left + termRect.width / 2 - tipWidth / 2;
+      left = Math.max(8, Math.min(left, card.clientWidth - tipWidth - 8));
+
+      let top = termRect.bottom - cardRect.top + 8;
+      if (top + tipHeight > card.clientHeight - 8) {
+        top = termRect.top - cardRect.top - tipHeight - 8;
+      }
+      top = Math.max(8, top);
+
+      tip.style.left = `${left}px`;
+      tip.style.top = `${top}px`;
+    }
+
+    function show(term) {
+      if (active && active !== term) active.classList.remove("is-selected");
+      active = term;
+      active.classList.add("is-selected");
+      tipReading.textContent = term.dataset.reading || "";
+      tipMeaning.textContent = term.dataset.meaning || "";
+      tip.hidden = false;
+      requestAnimationFrame(positionTip);
+    }
+
+    function toggle(term) {
+      if (active === term) hide();
+      else show(term);
+    }
+
+    const terms = [...card.querySelectorAll(".ch-term")];
+    const termHandlers = terms.map(term => {
+      const click = () => toggle(term);
+      const keydown = event => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          toggle(term);
+        } else if (event.key === "Escape") {
+          hide();
+          term.blur();
+        }
+      };
+      term.addEventListener("click", click);
+      term.addEventListener("keydown", keydown);
+      return { term, click, keydown };
+    });
+
+    const documentClick = event => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (!target.closest(".ch-term") && !target.closest(".ch-tip")) hide();
+    };
+    const escape = event => { if (event.key === "Escape") hide(); };
+    const resize = () => requestAnimationFrame(positionTip);
+
+    document.addEventListener("click", documentClick);
+    document.addEventListener("keydown", escape);
+    window.addEventListener("resize", resize);
+
+    root.__chappieCleanup = () => {
+      termHandlers.forEach(({ term, click, keydown }) => {
+        term.removeEventListener("click", click);
+        term.removeEventListener("keydown", keydown);
+      });
+      document.removeEventListener("click", documentClick);
+      document.removeEventListener("keydown", escape);
+      window.removeEventListener("resize", resize);
+      root.__chappieCleanup = null;
+    };
+
+    return { hide, getActiveTerm: () => active };
+  }
+
+  window.ChappieReading = { mount };
+  mount(document.getElementById("app"), sampleReading);
+})();
+</script>
+</body>
+</html>
