@@ -1,0 +1,19 @@
+{
+  "name": "chappie",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Portable MCP Apps reading and review UI for language learning in ChatGPT-compatible hosts.",
+  "scripts": {
+    "start": "node server.js",
+    "inspect": "npx @modelcontextprotocol/inspector@latest"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/ext-apps": "^1.0.1",
+    "@modelcontextprotocol/sdk": "^1.20.2",
+    "zod": "^3.25.76"
+  }
+}
