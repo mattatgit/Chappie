@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chappie — Interactive review reference</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --ch-text: var(--viz-text, #1f2328);
+  --ch-muted: var(--viz-muted, #667085);
+  --ch-border: var(--viz-border, #d0d5dd);
+  --ch-card: var(--viz-card, #ffffff);
+  --ch-panel: var(--viz-panel, #f8fafc);
+  --ch-accent: var(--viz-accent, #2563eb);
+  --ch-good: #16794b;
+  --ch-bad: #b42318;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ch-text: var(--viz-text, #f5f7fa);
+    --ch-muted: var(--viz-muted, #a8b0bd);
+    --ch-border: var(--viz-border, #3a4350);
+    --ch-card: var(--viz-card, #171a1f);
+    --ch-panel: var(--viz-panel, #22262d);
+    --ch-accent: var(--viz-accent, #7aa2ff);
+    --ch-good: #62c591;
+    --ch-bad: #ff8b84;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 24px;
+  background: transparent;
+  color: var(--ch-text);
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.ch-review {
+  width: 100%;
+  max-width: 736px;
+  margin: 0 auto;
+}
+.ch-review__card {
+  border: 1px solid var(--ch-border);
+  border-radius: 12px;
+  padding: 20px;
+  background: var(--ch-card);
+}
+.ch-review__title {
+  margin: 0 0 8px;
+  font-size: 17px;
+  font-weight: 650;
+}
+.ch-review__intro {
+  margin: 0 0 16px;
+  color: var(--ch-muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+.ch-question {
+  border-top: 1px solid var(--ch-border);
+  padding: 18px 0;
+}
+.ch-question:first-of-type { border-top: 0; padding-top: 0; }
+.ch-question__meta {
+  margin-bottom: 5px;
+  color: var(--ch-muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+.ch-question__prompt {
+  margin-bottom: 10px;
+  font-size: 16px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+.ch-input,
+.ch-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--ch-border);
+  border-radius: 8px;
+  background: var(--ch-panel);
+  color: var(--ch-text);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.45;
+  outline: none;
+}
+.ch-textarea { min-height: 82px; resize: vertical; }
+.ch-input:focus,
+.ch-textarea:focus {
+  outline: 2px solid var(--ch-accent);
+  outline-offset: 1px;
+}
+.ch-choice {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 8px 0;
+  cursor: pointer;
+  line-height: 1.45;
+}
+.ch-choice input {
+  margin-top: 4px;
+  accent-color: var(--ch-accent);
+}
+.ch-feedback {
+  margin-top: 10px;
+  padding: 9px 11px;
+  border-radius: 8px;
+  background: var(--ch-panel);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.ch-feedback[hidden],
+.ch-summary[hidden] { display: none; }
+.ch-feedback--correct { color: var(--ch-good); }
+.ch-feedback--incorrect { color: var(--ch-bad); }
+.ch-feedback--review { color: var(--ch-muted); }
+.ch-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+.ch-button {
+  min-height: 44px;
+  padding: 9px 15px;
+  border-radius: 9px;
+  border: 1px solid var(--ch-border);
+  background: transparent;
+  color: var(--ch-text);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+.ch-button--primary {
+  border-color: var(--ch-accent);
+  background: var(--ch-accent);
+  color: #fff;
+}
+.ch-summary {
+  margin-top: 18px;
+  border: 1px solid var(--ch-border);
+  border-radius: 10px;
+  padding: 14px;
+  line-height: 1.6;
+}
+.ch-summary__note {
+  margin-top: 6px;
+  color: var(--ch-muted);
+  font-size: 14px;
+}
+.ch-summary__answers {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--ch-panel);
+  white-space: pre-wrap;
+  font-size: 14px;
+  line-height: 1.55;
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(() => {
+  const sampleReview = {
+    id: "snow-storage-review-example",
+    title: "雪置き場と住宅配置の復習",
+    intro: "本文は見返さずに答えてください。自由入力は文字列一致では採点せず、回答後に意味的レビューへ回します。",
+    questions: [
+      {
+        id: "q1",
+        type: "text",
+        label: "読み",
+        prompt: "雪置き場 の読み方をひらがなで書いてください。",
+        reviewHint: "Expected core knowledge: ゆきおきば."
+      },
+      {
+        id: "q2",
+        type: "text",
+        label: "漢字",
+        prompt: "「しきち」を漢字で書いてください。例：自分の＿＿内に雪を置く。",
+        reviewHint: "Expected core knowledge: 敷地."
+      },
+      {
+        id: "q3",
+        type: "text",
+        label: "語彙",
+        prompt: "支障 の読み方と意味を書いてください。英語で意味を書いても構いません。",
+        reviewHint: "Expected: ししょう; hindrance / obstacle / disruption."
+      },
+      {
+        id: "q4",
+        type: "text",
+        label: "漢字",
+        prompt: "「はいち」を漢字で書いてください。例：落雪する場所には車を＿＿しない。",
+        reviewHint: "Expected core knowledge: 配置."
+      },
+      {
+        id: "q5",
+        type: "multiple_choice",
+        label: "減らす vs 減る",
+        prompt: "最も自然な文を選んでください。",
+        options: [
+          { value: "a", label: "雪置き場を広げると、除雪の手間を減ります。" },
+          { value: "b", label: "雪置き場を広げると、除雪の手間を減らすことができます。" },
+          { value: "c", label: "雪置き場を広げると、除雪の手間が減らします。" },
+          { value: "d", label: "雪置き場を広げると、除雪の手間に減らします。" }
+        ],
+        answer: "b",
+        explanation: "「減らす」は他動詞なので「手間を減らす」。自動詞なら「手間が減る」となります。"
+      },
+      {
+        id: "q6",
+        type: "multiple_choice",
+        label: "文法",
+        prompt: "「自分の敷地の雪を道路や隣地へ出せるとは限らない」の意味として最も近いものは？",
+        options: [
+          { value: "a", label: "道路や隣地には絶対に雪を出してはいけない。" },
+          { value: "b", label: "道路や隣地にはいつでも雪を出してよい。" },
+          { value: "c", label: "道路や隣地へ雪を出せるとは必ずしも言えない。" },
+          { value: "d", label: "道路より隣地に雪を出すほうがよい。" }
+        ],
+        answer: "c",
+        explanation: "「〜とは限らない」は「必ずそうだとは言えない / not necessarily」という意味です。"
+      },
+      {
+        id: "q7",
+        type: "text",
+        label: "間隔反復",
+        prompt: "破損 の読み方を書いてください。余裕があれば、短い意味も付けてください。",
+        reviewHint: "Expected: はそん; damage / breakage."
+      },
+      {
+        id: "q8",
+        type: "multiple_choice",
+        label: "読解",
+        prompt: "本文では、住宅を購入した最初の冬に雪の溜まり方を観察することをなぜ勧めていましたか？",
+        options: [
+          { value: "a", label: "雪の量から土地の価格を判断するため。" },
+          { value: "b", label: "毎年同じ場所に庭木を植えるため。" },
+          { value: "c", label: "屋根の雪をすべて自然に溶かすため。" },
+          { value: "d", label: "翌年以降の庭や駐車場、雪置き場の計画に生かすため。" }
+        ],
+        answer: "d",
+        explanation: "雪の溜まり方や動きを観察して、翌年以降の庭・駐車場・雪置き場の配置改善に生かすためです。"
+      },
+      {
+        id: "q9",
+        type: "textarea",
+        label: "実用表現",
+        prompt: "造園業者に自然で丁寧に聞いてください：\n“If we make the snow-storage area a little larger, could we reduce the amount of work required for daily snow clearing?”",
+        reviewHint: "Assess naturalness and politeness semantically; do not exact-string grade."
+      }
+    ]
+  };
+
+  function mount(root, data) {
+    if (!root) throw new Error("ChappieReview.mount requires a root element");
+    root.replaceChildren();
+
+    const shell = document.createElement("section");
+    shell.className = "ch-review";
+    shell.dataset.reviewId = data.id || "";
+
+    const card = document.createElement("div");
+    card.className = "ch-review__card";
+
+    if (data.title) {
+      const title = document.createElement("h2");
+      title.className = "ch-review__title";
+      title.textContent = data.title;
+      card.append(title);
+    }
+
+    if (data.intro) {
+      const intro = document.createElement("p");
+      intro.className = "ch-review__intro";
+      intro.textContent = data.intro;
+      card.append(intro);
+    }
+
+    const form = document.createElement("form");
+    const rendered = [];
+
+    (data.questions || []).forEach((question, index) => {
+      const section = document.createElement("section");
+      section.className = "ch-question";
+      section.dataset.questionId = question.id || `q${index + 1}`;
+
+      const meta = document.createElement("div");
+      meta.className = "ch-question__meta";
+      meta.textContent = `Q${index + 1}${question.label ? ` · ${question.label}` : ""}`;
+
+      const prompt = document.createElement("div");
+      prompt.className = "ch-question__prompt";
+      prompt.textContent = question.prompt || "";
+
+      section.append(meta, prompt);
+
+      let control;
+      if (question.type === "multiple_choice") {
+        control = document.createElement("div");
+        (question.options || []).forEach(option => {
+          const label = document.createElement("label");
+          label.className = "ch-choice";
+          const radio = document.createElement("input");
+          radio.type = "radio";
+          radio.name = `ch-${data.id || "review"}-${question.id || index}`;
+          radio.value = option.value;
+          const text = document.createElement("span");
+          text.textContent = option.label;
+          label.append(radio, text);
+          control.append(label);
+        });
+      } else if (question.type === "textarea") {
+        control = document.createElement("textarea");
+        control.className = "ch-textarea";
+        control.autocomplete = "off";
+      } else {
+        control = document.createElement("input");
+        control.className = "ch-input";
+        control.type = "text";
+        control.autocomplete = "off";
+      }
+
+      const feedback = document.createElement("div");
+      feedback.className = "ch-feedback";
+      feedback.hidden = true;
+
+      section.append(control, feedback);
+      form.append(section);
+      rendered.push({ question, section, control, feedback });
+    });
+
+    const actions = document.createElement("div");
+    actions.className = "ch-actions";
+
+    const submit = document.createElement("button");
+    submit.className = "ch-button ch-button--primary";
+    submit.type = "submit";
+    submit.textContent = "回答を確認";
+
+    const reset = document.createElement("button");
+    reset.className = "ch-button";
+    reset.type = "button";
+    reset.textContent = "リセット";
+
+    actions.append(submit, reset);
+    form.append(actions);
+
+    const summary = document.createElement("div");
+    summary.className = "ch-summary";
+    summary.hidden = true;
+    summary.setAttribute("aria-live", "polite");
+    form.append(summary);
+
+    card.append(form);
+    shell.append(card);
+    root.append(shell);
+
+    let lastSubmission = null;
+
+    function readResponse(item) {
+      if (item.question.type === "multiple_choice") {
+        const checked = item.control.querySelector("input[type=radio]:checked");
+        if (!checked) return { raw: "", display: "[未回答]", value: "" };
+        const option = (item.question.options || []).find(o => o.value === checked.value);
+        return { raw: option?.label || checked.value, display: option?.label || checked.value, value: checked.value };
+      }
+      const raw = item.control.value.trim();
+      return { raw, display: raw || "[未回答]", value: raw };
+    }
+
+    function makeSummary(payload, closedCorrect, closedTotal) {
+      summary.replaceChildren();
+
+      const heading = document.createElement("strong");
+      heading.textContent = "回答状況";
+      summary.append(heading, document.createElement("br"));
+
+      const score = document.createTextNode(`選択問題: ${closedCorrect} / ${closedTotal} 正解。自由入力は意味的レビュー待ちです。`);
+      summary.append(score);
+
+      const note = document.createElement("div");
+      note.className = "ch-summary__note";
+      note.textContent = "自由入力は要レビューとして保持され、正誤の文字列一致判定は行いません。";
+      summary.append(note);
+
+      const answers = document.createElement("div");
+      answers.className = "ch-summary__answers";
+      answers.textContent = payload.responses.map((response, index) => `Q${index + 1}: ${response.response || "[未回答]"}`).join("\n");
+      summary.append(answers);
+      summary.hidden = false;
+      summary.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    form.addEventListener("submit", event => {
+      event.preventDefault();
+      let closedCorrect = 0;
+      let closedTotal = 0;
+      const responses = [];
+
+      rendered.forEach(item => {
+        const { question, feedback } = item;
+        const response = readResponse(item);
+        feedback.hidden = false;
+        feedback.className = "ch-feedback";
+
+        if (question.type === "multiple_choice") {
+          closedTotal += 1;
+          if (!response.value) {
+            feedback.classList.add("ch-feedback--review");
+            feedback.textContent = "未回答";
+            responses.push({
+              questionId: question.id,
+              type: question.type,
+              prompt: question.prompt,
+              response: "",
+              value: "",
+              localStatus: "unanswered",
+              needsReview: false
+            });
+          } else {
+            const correct = response.value === question.answer;
+            if (correct) closedCorrect += 1;
+            feedback.classList.add(correct ? "ch-feedback--correct" : "ch-feedback--incorrect");
+            feedback.textContent = `${correct ? "正解。" : "不正解。"}${question.explanation || ""}`;
+            responses.push({
+              questionId: question.id,
+              type: question.type,
+              prompt: question.prompt,
+              response: response.raw,
+              value: response.value,
+              localStatus: correct ? "correct" : "incorrect",
+              needsReview: false
+            });
+          }
+        } else {
+          const answered = Boolean(response.value);
+          feedback.classList.add("ch-feedback--review");
+          feedback.textContent = answered
+            ? "要レビュー — 自由入力なので自動で○×判定しません。"
+            : "未回答";
+          responses.push({
+            questionId: question.id,
+            type: question.type,
+            prompt: question.prompt,
+            response: response.raw,
+            localStatus: answered ? "needs_review" : "unanswered",
+            needsReview: answered,
+            reviewHint: question.reviewHint || ""
+          });
+        }
+      });
+
+      lastSubmission = {
+        reviewId: data.id || "",
+        title: data.title || "",
+        submittedAt: new Date().toISOString(),
+        closedForm: { correct: closedCorrect, total: closedTotal },
+        responses
+      };
+
+      makeSummary(lastSubmission, closedCorrect, closedTotal);
+      root.dispatchEvent(new CustomEvent("chappie:review-submit", {
+        detail: lastSubmission,
+        bubbles: true
+      }));
+    });
+
+    reset.addEventListener("click", () => {
+      form.reset();
+      rendered.forEach(({ feedback }) => {
+        feedback.hidden = true;
+        feedback.textContent = "";
+        feedback.className = "ch-feedback";
+      });
+      summary.hidden = true;
+      summary.replaceChildren();
+      lastSubmission = null;
+    });
+
+    return { getLastSubmission: () => lastSubmission };
+  }
+
+  window.ChappieReview = { mount };
+  mount(document.getElementById("app"), sampleReview);
+
+  // Stage 2 integration point example:
+  document.getElementById("app").addEventListener("chappie:review-submit", event => {
+    console.info("Chappie review payload", event.detail);
+  });
+})();
+</script>
+</body>
+</html>
