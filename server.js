@@ -11,17 +11,33 @@ import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
 import { toNodeHandler } from "@modelcontextprotocol/node";
 import { z } from "zod";
 
-const READING_URI = "ui://chappie/reading-v4.html";
-const REVIEW_URI = "ui://chappie/review-v3.html";
-const PUBLIC_ORIGIN = "https://chappie-mcp.onrender.com";
-const READING_SCRIPT_PATH = "/assets/chappie-reading-v3.js";
-const REVIEW_SCRIPT_PATH = "/assets/chappie-review-v2.js";
+const READING_URI = "ui://chappie/reading-v5.html";
+const REVIEW_URI = "ui://chappie/review-v4.html";
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
-const readingHtml = readFileSync(path.join(rootDir, "public/mcp-reading-widget.html"), "utf8");
-const reviewHtml = readFileSync(path.join(rootDir, "public/mcp-review-widget.html"), "utf8");
+const readingHtmlTemplate = readFileSync(path.join(rootDir, "public/mcp-reading-widget.html"), "utf8");
+const reviewHtmlTemplate = readFileSync(path.join(rootDir, "public/mcp-review-widget.html"), "utf8");
 const readingScript = readFileSync(path.join(rootDir, "public/chappie-reading-v3.js"), "utf8");
 const reviewScript = readFileSync(path.join(rootDir, "public/chappie-review-v2.js"), "utf8");
+
+function inlineModule(template, externalSrc, source) {
+  const tag = `<script type="module" src="${externalSrc}"></script>`;
+  if (!template.includes(tag)) {
+    throw new Error(`Expected widget script tag not found: ${externalSrc}`);
+  }
+  return template.replace(tag, `<script type="module">\n${source}\n</script>`);
+}
+
+const readingHtml = inlineModule(
+  readingHtmlTemplate,
+  "https://chappie-mcp.onrender.com/assets/chappie-reading-v3.js",
+  readingScript,
+);
+const reviewHtml = inlineModule(
+  reviewHtmlTemplate,
+  "https://chappie-mcp.onrender.com/assets/chappie-review-v2.js",
+  reviewScript,
+);
 
 const annotationSchema = z.object({
   pronunciation: z.string().optional(),
@@ -69,21 +85,9 @@ const reviewSchema = z.object({
 
 function resourceMeta(description) {
   return {
-    ui: {
-      prefersBorder: true,
-      domain: PUBLIC_ORIGIN,
-      csp: {
-        resourceDomains: [PUBLIC_ORIGIN],
-        connectDomains: [],
-      },
-    },
+    ui: { prefersBorder: true },
     "openai/ui": { availableDisplayModes: ["inline"] },
     "openai/widgetDescription": description,
-    "openai/widgetDomain": PUBLIC_ORIGIN,
-    "openai/widgetCSP": {
-      resource_domains: [PUBLIC_ORIGIN],
-      connect_domains: [],
-    },
   };
 }
 
@@ -187,10 +191,6 @@ const httpServer = createHttpServer((req, res) => {
     res.setHeader("Access-Control-Expose-Headers", "Mcp-Session-Id");
   }
 
-  if (url.pathname === READING_SCRIPT_PATH || url.pathname === REVIEW_SCRIPT_PATH) {
-    res.setHeader("Access-Control-Allow-Origin", "*");
-  }
-
   if (req.method === "OPTIONS" && url.pathname === MCP_PATH) {
     res.writeHead(204);
     return res.end();
@@ -200,22 +200,6 @@ const httpServer = createHttpServer((req, res) => {
     return res
       .writeHead(200, { "content-type": "text/plain; charset=utf-8" })
       .end(req.method === "HEAD" ? undefined : "Chappie MCP Apps server");
-  }
-
-  if ((req.method === "GET" || req.method === "HEAD") && url.pathname === READING_SCRIPT_PATH) {
-    res.writeHead(200, {
-      "content-type": "text/javascript; charset=utf-8",
-      "cache-control": "public, max-age=31536000, immutable",
-    });
-    return res.end(req.method === "HEAD" ? undefined : readingScript);
-  }
-
-  if ((req.method === "GET" || req.method === "HEAD") && url.pathname === REVIEW_SCRIPT_PATH) {
-    res.writeHead(200, {
-      "content-type": "text/javascript; charset=utf-8",
-      "cache-control": "public, max-age=31536000, immutable",
-    });
-    return res.end(req.method === "HEAD" ? undefined : reviewScript);
   }
 
   if (url.pathname === MCP_PATH && new Set(["POST", "GET", "DELETE"]).has(req.method)) {
