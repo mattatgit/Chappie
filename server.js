@@ -11,12 +11,17 @@ import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
 import { toNodeHandler } from "@modelcontextprotocol/node";
 import { z } from "zod";
 
-const READING_URI = "ui://chappie/reading-v2.html";
-const REVIEW_URI = "ui://chappie/review-v1.html";
+const READING_URI = "ui://chappie/reading-v3.html";
+const REVIEW_URI = "ui://chappie/review-v2.html";
+const PUBLIC_ORIGIN = "https://chappie-mcp.onrender.com";
+const READING_SCRIPT_PATH = "/assets/chappie-reading-v3.js";
+const REVIEW_SCRIPT_PATH = "/assets/chappie-review-v2.js";
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 const readingHtml = readFileSync(path.join(rootDir, "public/mcp-reading-widget.html"), "utf8");
 const reviewHtml = readFileSync(path.join(rootDir, "public/mcp-review-widget.html"), "utf8");
+const readingScript = readFileSync(path.join(rootDir, "public/chappie-reading-v3.js"), "utf8");
+const reviewScript = readFileSync(path.join(rootDir, "public/chappie-review-v2.js"), "utf8");
 
 const annotationSchema = z.object({
   pronunciation: z.string().optional(),
@@ -62,6 +67,24 @@ const reviewSchema = z.object({
   questions: z.array(questionSchema),
 });
 
+function resourceMeta(description) {
+  return {
+    ui: {
+      prefersBorder: true,
+      csp: {
+        resourceDomains: [PUBLIC_ORIGIN],
+        connectDomains: [],
+      },
+    },
+    "openai/ui": { availableDisplayModes: ["inline"] },
+    "openai/widgetDescription": description,
+    "openai/widgetCSP": {
+      resource_domains: [PUBLIC_ORIGIN],
+      connect_domains: [],
+    },
+  };
+}
+
 function createChappieServer() {
   const server = new McpServer({ name: "chappie", version: "0.2.0" });
 
@@ -72,11 +95,7 @@ function createChappieServer() {
         uri: READING_URI,
         mimeType: RESOURCE_MIME_TYPE,
         text: readingHtml,
-        _meta: {
-          ui: { prefersBorder: true },
-          "openai/ui": { availableDisplayModes: ["inline"] },
-          "openai/widgetDescription": "Interactive language reading with contextual hidden annotations.",
-        },
+        _meta: resourceMeta("Interactive language reading with contextual hidden annotations."),
       }],
     };
   });
@@ -88,11 +107,7 @@ function createChappieServer() {
         uri: REVIEW_URI,
         mimeType: RESOURCE_MIME_TYPE,
         text: reviewHtml,
-        _meta: {
-          ui: { prefersBorder: true },
-          "openai/ui": { availableDisplayModes: ["inline"] },
-          "openai/widgetDescription": "Interactive retrieval-practice review with semantic free-text handoff.",
-        },
+        _meta: resourceMeta("Interactive retrieval-practice review with semantic free-text handoff."),
       }],
     };
   });
@@ -170,15 +185,35 @@ const httpServer = createHttpServer((req, res) => {
     res.setHeader("Access-Control-Expose-Headers", "Mcp-Session-Id");
   }
 
+  if (url.pathname === READING_SCRIPT_PATH || url.pathname === REVIEW_SCRIPT_PATH) {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+  }
+
   if (req.method === "OPTIONS" && url.pathname === MCP_PATH) {
     res.writeHead(204);
     return res.end();
   }
 
-  if (req.method === "GET" && url.pathname === "/") {
+  if ((req.method === "GET" || req.method === "HEAD") && url.pathname === "/") {
     return res
       .writeHead(200, { "content-type": "text/plain; charset=utf-8" })
-      .end("Chappie MCP Apps server");
+      .end(req.method === "HEAD" ? undefined : "Chappie MCP Apps server");
+  }
+
+  if ((req.method === "GET" || req.method === "HEAD") && url.pathname === READING_SCRIPT_PATH) {
+    res.writeHead(200, {
+      "content-type": "text/javascript; charset=utf-8",
+      "cache-control": "public, max-age=31536000, immutable",
+    });
+    return res.end(req.method === "HEAD" ? undefined : readingScript);
+  }
+
+  if ((req.method === "GET" || req.method === "HEAD") && url.pathname === REVIEW_SCRIPT_PATH) {
+    res.writeHead(200, {
+      "content-type": "text/javascript; charset=utf-8",
+      "cache-control": "public, max-age=31536000, immutable",
+    });
+    return res.end(req.method === "HEAD" ? undefined : reviewScript);
   }
 
   if (url.pathname === MCP_PATH && new Set(["POST", "GET", "DELETE"]).has(req.method)) {
