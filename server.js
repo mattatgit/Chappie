@@ -65,7 +65,7 @@ const reviewSchema = z.object({
 function createChappieServer() {
   const server = new McpServer({ name: "chappie", version: "0.2.0" });
 
-  registerAppResource(server, "chappie-reading", READING_URI, {}, async () => {
+  registerAppResource(server, "chappie-reading", READING_URI, { mimeType: RESOURCE_MIME_TYPE }, async () => {
     console.log("[resource] chappie-reading");
     return {
       contents: [{
@@ -79,7 +79,7 @@ function createChappieServer() {
     };
   });
 
-  registerAppResource(server, "chappie-review", REVIEW_URI, {}, async () => {
+  registerAppResource(server, "chappie-review", REVIEW_URI, { mimeType: RESOURCE_MIME_TYPE }, async () => {
     console.log("[resource] chappie-review");
     return {
       contents: [{
@@ -98,7 +98,10 @@ function createChappieServer() {
     description: "Render a Chappie language-learning passage. Use structured segments; annotate only text that should reveal pronunciation/translation/meaning on interaction.",
     inputSchema: z.object({ reading: readingSchema }),
     outputSchema: z.object({ reading: readingSchema }),
-    _meta: { ui: { resourceUri: READING_URI } },
+    _meta: {
+      ui: { resourceUri: READING_URI },
+      "openai/outputTemplate": READING_URI,
+    },
   }, async ({ reading }) => {
     console.log("[tool] render_reading");
     return {
@@ -112,7 +115,10 @@ function createChappieServer() {
     description: "Render a Chappie retrieval-practice review. Multiple choice may be locally graded; free-text answers must be semantically reviewed by the model rather than exact-string graded.",
     inputSchema: z.object({ review: reviewSchema }),
     outputSchema: z.object({ review: reviewSchema }),
-    _meta: { ui: { resourceUri: REVIEW_URI } },
+    _meta: {
+      ui: { resourceUri: REVIEW_URI },
+      "openai/outputTemplate": REVIEW_URI,
+    },
   }, async ({ review }) => {
     console.log("[tool] render_review");
     return {
