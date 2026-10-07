@@ -11,8 +11,8 @@ import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
 import { toNodeHandler } from "@modelcontextprotocol/node";
 import { z } from "zod";
 
-const READING_URI = "ui://chappie/reading-v3.html";
-const REVIEW_URI = "ui://chappie/review-v2.html";
+const READING_URI = "ui://chappie/reading-v4.html";
+const REVIEW_URI = "ui://chappie/review-v3.html";
 const PUBLIC_ORIGIN = "https://chappie-mcp.onrender.com";
 const READING_SCRIPT_PATH = "/assets/chappie-reading-v3.js";
 const REVIEW_SCRIPT_PATH = "/assets/chappie-review-v2.js";
@@ -71,6 +71,7 @@ function resourceMeta(description) {
   return {
     ui: {
       prefersBorder: true,
+      domain: PUBLIC_ORIGIN,
       csp: {
         resourceDomains: [PUBLIC_ORIGIN],
         connectDomains: [],
@@ -78,6 +79,7 @@ function resourceMeta(description) {
     },
     "openai/ui": { availableDisplayModes: ["inline"] },
     "openai/widgetDescription": description,
+    "openai/widgetDomain": PUBLIC_ORIGIN,
     "openai/widgetCSP": {
       resource_domains: [PUBLIC_ORIGIN],
       connect_domains: [],
