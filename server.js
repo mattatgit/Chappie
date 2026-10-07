@@ -11,7 +11,7 @@ import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
 import { toNodeHandler } from "@modelcontextprotocol/node";
 import { z } from "zod";
 
-const READING_URI = "ui://chappie/reading-v1.html";
+const READING_URI = "ui://chappie/reading-v2.html";
 const REVIEW_URI = "ui://chappie/review-v1.html";
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
@@ -65,7 +65,7 @@ const reviewSchema = z.object({
 function createChappieServer() {
   const server = new McpServer({ name: "chappie", version: "0.2.0" });
 
-  registerAppResource(server, "chappie-reading", READING_URI, { mimeType: RESOURCE_MIME_TYPE }, async () => {
+  registerAppResource(server, "chappie-reading", READING_URI, {}, async () => {
     console.log("[resource] chappie-reading");
     return {
       contents: [{
@@ -73,13 +73,15 @@ function createChappieServer() {
         mimeType: RESOURCE_MIME_TYPE,
         text: readingHtml,
         _meta: {
+          ui: { prefersBorder: true },
+          "openai/ui": { availableDisplayModes: ["inline"] },
           "openai/widgetDescription": "Interactive language reading with contextual hidden annotations.",
         },
       }],
     };
   });
 
-  registerAppResource(server, "chappie-review", REVIEW_URI, { mimeType: RESOURCE_MIME_TYPE }, async () => {
+  registerAppResource(server, "chappie-review", REVIEW_URI, {}, async () => {
     console.log("[resource] chappie-review");
     return {
       contents: [{
@@ -87,6 +89,8 @@ function createChappieServer() {
         mimeType: RESOURCE_MIME_TYPE,
         text: reviewHtml,
         _meta: {
+          ui: { prefersBorder: true },
+          "openai/ui": { availableDisplayModes: ["inline"] },
           "openai/widgetDescription": "Interactive retrieval-practice review with semantic free-text handoff.",
         },
       }],
