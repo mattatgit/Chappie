@@ -1,85 +1,166 @@
 # Chappie
 
-Chappie is a reusable interactive reading and review UI for language learning in ChatGPT.
+Chappie is a reusable interactive reading and review UI for language learning in ChatGPT and other compatible MCP Apps hosts.
 
-The project began as a pair of working inline components used for Japanese study in a ChatGPT conversation. Stage 1 preserves those components and their behaviour as standalone HTML/CSS/JavaScript reference implementations before they are wrapped in an MCP / ChatGPT plugin.
+The project began as a pair of working inline components used for Japanese study in a ChatGPT conversation. Stage 1 preserves those components as standalone reference implementations. Stage 2 wraps the same interaction model in the smallest practical MCP Apps integration so it can be invoked from fresh conversations and other accounts rather than depending on one chat's private rendering environment.
 
-## Stage 1 goals
-
-- Preserve the working reading interaction outside chat context.
-- Preserve the working review/test interaction outside chat context.
-- Define stable JSON-shaped data contracts for passages and quizzes.
-- Document the behaviour carefully enough that a future MCP/plugin layer can render the same UI without re-inventing it.
-- Keep the reference implementation dependency-free and easy to inspect.
-
-Stage 1 deliberately does **not** yet include MCP server code, hosting, authentication, plugin manifests, or deployment.
-
-## Reference components
+## Stage 1 reference components
 
 ### Interactive reading
 
 `public/reading-widget.html`
 
 - normal passage text by default
-- hidden furigana on annotated Japanese words
-- hover/focus reveals furigana
-- click/tap reveals reading + English meaning in a contextual card near the selected word
-- only one selected word at a time
-- click elsewhere or press Escape to dismiss
-- tooltip collision handling on narrow layouts
-- keyboard and touch support
-- light/dark compatible styling using CSS custom properties with fallbacks
+- hidden furigana / pronunciation assistance on annotated terms
+- hover/focus reveals the primary hint
+- click/tap reveals pronunciation/translation plus meaning near the selected text
+- keyboard, touch, light/dark, and narrow-layout support
 
-The widget consumes structured passage data. See `docs/example-reading.json`.
+The Stage 1 widget consumes structured passage data. See `docs/example-reading.json`.
 
 ### Interactive review
 
 `public/review-widget.html`
 
-- supports free text, textarea and multiple-choice questions
+- free text, textarea, and multiple-choice questions
 - closed-form questions may be locally graded
-- free-text answers are **never** marked right/wrong by exact string matching
-- free-text answers are labelled `要レビュー`
-- submitted answers are collected into a review payload
-- the widget dispatches a `chappie:review-submit` browser event so a future ChatGPT/MCP wrapper can hand the answers back to the model for semantic review
+- free-text answers are never exact-string graded
+- free-text answers are marked for semantic review
+- submission emits a structured browser event for host integration
 
-The widget consumes structured review data. See `docs/example-review.json`.
+The Stage 1 widget consumes structured review data. See `docs/example-review.json`.
 
-## Behaviour specification
+## Stage 2 MCP Apps integration
 
-The canonical behaviour is documented in:
+Current implementation is on `stage-2-mcp-wrapper`.
 
-- `docs/behaviour-spec.md`
+The Stage 2 server exposes two model-callable tools:
 
-That file captures the interaction and pedagogical rules developed through actual use, including generous furigana coverage and diagnostic review of partial knowledge.
+- `render_reading({ reading })`
+- `render_review({ review })`
+
+Each tool is linked to an MCP Apps UI resource through `_meta.ui.resourceUri`.
+
+Stage 2 views live at:
+
+- `public/mcp-reading-widget.html`
+- `public/mcp-review-widget.html`
+
+The review view uses the open MCP Apps bridge to:
+
+1. keep closed-form grading local
+2. preserve raw free-text answers without literal-string grading
+3. place the structured review payload into model-visible context
+4. send a follow-up message into the active conversation for semantic review
+5. retain a formatted one-click copy fallback
+
+The architecture remains deliberately stateless. The LLM supplies pedagogical content; Chappie supplies interaction and transport.
+
+See `docs/stage-2-status.md` for current implementation and test status.
+
+## Language-neutral data
+
+Stage 2 accepts the original Japanese-friendly fields while also supporting a more neutral annotation object:
+
+```json
+{
+  "text": "reluctant",
+  "annotation": {
+    "translation": "気が進まない",
+    "meaning": "unwilling or hesitant to do something"
+  }
+}
+```
+
+For Japanese, existing Stage 1 input remains valid:
+
+```json
+{
+  "text": "固定資産税",
+  "reading": "こていしさんぜい",
+  "meaning": "fixed asset tax; property tax"
+}
+```
+
+## Local development
+
+Requires Node 22.19+.
+
+```bash
+npm install
+npm start
+```
+
+The server exposes:
+
+```text
+http://localhost:8787/mcp
+```
+
+Health check:
+
+```text
+http://localhost:8787/
+```
+
+Run MCP Inspector with:
+
+```bash
+npm run inspect
+```
+
+## Deploy for ChatGPT testing
+
+The Stage 2 branch includes a Render Blueprint (`render.yaml`) for a small public HTTPS deployment.
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/mattatgit/Chappie/tree/stage-2-mcp-wrapper)
+
+After deployment, use the service's HTTPS URL plus `/mcp` as the MCP endpoint in ChatGPT developer mode, for example:
+
+```text
+https://<your-service>.onrender.com/mcp
+```
+
+The root URL (`/`) is the deployment health check.
 
 ## Repository layout
 
 ```text
 Chappie/
+├── .github/workflows/ci.yml
 ├── README.md
+├── package.json
+├── render.yaml
+├── server.js
+├── scripts/
+│   └── mcp-smoke.mjs
 ├── docs/
 │   ├── behaviour-spec.md
+│   ├── decisions.md
 │   ├── example-reading.json
-│   └── example-review.json
+│   ├── example-review.json
+│   ├── project-context.md
+│   ├── stage-2-plan.md
+│   └── stage-2-status.md
 └── public/
     ├── reading-widget.html
-    └── review-widget.html
+    ├── review-widget.html
+    ├── mcp-reading-widget.html
+    └── mcp-review-widget.html
 ```
 
-## Local testing
+## Product and architectural rules
 
-The two HTML files are self-contained reference implementations. Open either file in a browser to see it with embedded example data.
+The canonical behaviour and decisions are documented in:
 
-Each file also exposes a small JavaScript API:
+- `docs/behaviour-spec.md`
+- `docs/decisions.md`
 
-```js
-window.ChappieReading.mount(rootElement, readingData)
-window.ChappieReview.mount(rootElement, reviewData)
-```
+Important constraints include:
 
-A future MCP/App SDK wrapper can supply structured data and reuse the same rendering logic.
-
-## Next stage
-
-Stage 2 will wrap these preserved components in the smallest practical MCP / ChatGPT app layer so the reading and review experiences can be invoked from compatible ChatGPT conversations rather than depending on one chat's inline rendering environment.
+- Chappie is a language-learning interaction layer, not a Japanese-learning engine.
+- Stage 1 remains the reference interaction design.
+- Free-text responses are semantically reviewed by the LLM, never exact-string graded.
+- Retrieval comes before teaching in review mode.
+- Long-term learner memory and persistence remain outside the widget layer unless a later requirement justifies them.
+- Ordinary users should eventually install/add Chappie without configuring tunnels or developer credentials.

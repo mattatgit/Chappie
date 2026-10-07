@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chappie reading</title>
+<style>
+:root{color-scheme:light dark;--text:#1f2328;--muted:#667085;--border:#d0d5dd;--card:#fff;--panel:#f8fafc;--accent:#2563eb}
+@media(prefers-color-scheme:dark){:root{--text:#f5f7fa;--muted:#a8b0bd;--border:#3a4350;--card:#171a1f;--panel:#22262d;--accent:#7aa2ff}}
+*{box-sizing:border-box}body{margin:0;padding:20px;background:transparent;color:var(--text);font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.reading{width:100%;max-width:736px;margin:0 auto}.intro{margin:0 0 12px;color:var(--muted);font-size:14px;line-height:1.55}.card{position:relative;border:1px solid var(--border);border-radius:12px;padding:20px;background:var(--card)}h2{margin:0 0 16px;font-size:17px}.paragraph{margin:0 0 20px;font-size:18px;line-height:2.7}.paragraph:last-of-type{margin-bottom:0}.term{position:relative;display:inline-block;cursor:pointer;border-bottom:1px dotted var(--muted);outline:none;border-radius:3px}.term:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.hint{position:absolute;left:50%;bottom:80%;transform:translateX(-50%);opacity:0;white-space:nowrap;pointer-events:none;color:var(--muted);font-size:10px;line-height:1;transition:opacity 90ms ease-out}.term.is-selected .hint,.term:focus .hint{opacity:1}@media(hover:hover) and (pointer:fine){.term:hover .hint{opacity:1}}.tip{position:absolute;z-index:30;max-width:min(285px,calc(100% - 16px));padding:9px 11px;border:1px solid var(--border);border-radius:9px;background:var(--panel);box-shadow:0 4px 14px rgba(0,0,0,.14);font-size:13px;line-height:1.45}.tip[hidden]{display:none}.tip-primary{margin-bottom:2px;font-weight:650}.empty{color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+<div id="app" class="empty">Loading reading…</div>
+<script type="module" src="https://chappie-mcp.onrender.com/assets/chappie-reading-v3.js"></script>
+</body>
+</html>
