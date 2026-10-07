@@ -65,27 +65,33 @@ const reviewSchema = z.object({
 function createChappieServer() {
   const server = new McpServer({ name: "chappie", version: "0.2.0" });
 
-  registerAppResource(server, "chappie-reading", READING_URI, {}, async () => ({
-    contents: [{
-      uri: READING_URI,
-      mimeType: RESOURCE_MIME_TYPE,
-      text: readingHtml,
-      _meta: {
-        "openai/widgetDescription": "Interactive language reading with contextual hidden annotations.",
-      },
-    }],
-  }));
+  registerAppResource(server, "chappie-reading", READING_URI, {}, async () => {
+    console.log("[resource] chappie-reading");
+    return {
+      contents: [{
+        uri: READING_URI,
+        mimeType: RESOURCE_MIME_TYPE,
+        text: readingHtml,
+        _meta: {
+          "openai/widgetDescription": "Interactive language reading with contextual hidden annotations.",
+        },
+      }],
+    };
+  });
 
-  registerAppResource(server, "chappie-review", REVIEW_URI, {}, async () => ({
-    contents: [{
-      uri: REVIEW_URI,
-      mimeType: RESOURCE_MIME_TYPE,
-      text: reviewHtml,
-      _meta: {
-        "openai/widgetDescription": "Interactive retrieval-practice review with semantic free-text handoff.",
-      },
-    }],
-  }));
+  registerAppResource(server, "chappie-review", REVIEW_URI, {}, async () => {
+    console.log("[resource] chappie-review");
+    return {
+      contents: [{
+        uri: REVIEW_URI,
+        mimeType: RESOURCE_MIME_TYPE,
+        text: reviewHtml,
+        _meta: {
+          "openai/widgetDescription": "Interactive retrieval-practice review with semantic free-text handoff.",
+        },
+      }],
+    };
+  });
 
   registerAppTool(server, "render_reading", {
     title: "Render interactive reading",
@@ -93,10 +99,13 @@ function createChappieServer() {
     inputSchema: z.object({ reading: readingSchema }),
     outputSchema: z.object({ reading: readingSchema }),
     _meta: { ui: { resourceUri: READING_URI } },
-  }, async ({ reading }) => ({
-    content: [{ type: "text", text: `Interactive reading: ${reading.title || reading.id}` }],
-    structuredContent: { reading },
-  }));
+  }, async ({ reading }) => {
+    console.log("[tool] render_reading");
+    return {
+      content: [{ type: "text", text: `Interactive reading: ${reading.title || reading.id}` }],
+      structuredContent: { reading },
+    };
+  });
 
   registerAppTool(server, "render_review", {
     title: "Render interactive review",
@@ -104,10 +113,13 @@ function createChappieServer() {
     inputSchema: z.object({ review: reviewSchema }),
     outputSchema: z.object({ review: reviewSchema }),
     _meta: { ui: { resourceUri: REVIEW_URI } },
-  }, async ({ review }) => ({
-    content: [{ type: "text", text: `Interactive review: ${review.title || review.id}. Free-text answers should be discussed semantically after submission.` }],
-    structuredContent: { review },
-  }));
+  }, async ({ review }) => {
+    console.log("[tool] render_review");
+    return {
+      content: [{ type: "text", text: `Interactive review: ${review.title || review.id}. Free-text answers should be discussed semantically after submission.` }],
+      structuredContent: { review },
+    };
+  });
 
   return server;
 }
@@ -122,8 +134,21 @@ const host = process.env.HOST ?? "0.0.0.0";
 const MCP_PATH = "/mcp";
 
 const httpServer = createHttpServer((req, res) => {
+  const startedAt = Date.now();
+
   if (!req.url) return res.writeHead(400).end("Missing URL");
   const url = new URL(req.url, `http://${req.headers.host ?? "localhost"}`);
+
+  let finished = false;
+  res.on("finish", () => {
+    finished = true;
+    console.log(`[http] ${req.method} ${url.pathname} -> ${res.statusCode} ${Date.now() - startedAt}ms`);
+  });
+  res.on("close", () => {
+    if (!finished) {
+      console.warn(`[http] ${req.method} ${url.pathname} -> connection closed after ${Date.now() - startedAt}ms`);
+    }
+  });
 
   if (url.pathname === MCP_PATH) {
     res.setHeader("Access-Control-Allow-Origin", "*");
