@@ -14,6 +14,7 @@
 <div id="app" class="empty">Loading reading…</div>
 <script type="module">
 const app = document.getElementById("app");
+let mountedReadingId = null;
 let rpcId=0; const pending=new Map();
 const request=(method,params)=>new Promise((resolve,reject)=>{const id=++rpcId;pending.set(id,{resolve,reject});window.parent.postMessage({jsonrpc:"2.0",id,method,params},"*")});
 const notify=(method,params)=>window.parent.postMessage({jsonrpc:"2.0",method,params},"*");
@@ -21,12 +22,17 @@ const notify=(method,params)=>window.parent.postMessage({jsonrpc:"2.0",method,pa
 window.addEventListener("message",event=>{
   if(event.source!==window.parent)return; const message=event.data;
   if(!message||message.jsonrpc!=="2.0")return;
-  if(typeof message.id==="number"){
-    const p=pending.get(message.id); if(!p)return; pending.delete(message.id);
+  if(message.id!==undefined&&pending.has(message.id)){
+    const p=pending.get(message.id); pending.delete(message.id);
     message.error?p.reject(message.error):p.resolve(message.result); return;
   }
   if(message.method==="ui/notifications/tool-result") renderFromResult(message.params);
-});
+},{passive:true});
+
+window.addEventListener("openai:set_globals",event=>{
+  const output=event?.detail?.globals?.toolOutput;
+  if(output?.reading) mount(output.reading);
+},{passive:true});
 
 function normalize(segment){
   const a=segment?.annotation||{};
@@ -42,6 +48,17 @@ function renderFromResult(result){
   if(data) mount(data);
 }
 
+function hydrateFromOpenAI(){
+  const data=window.openai?.toolOutput?.reading;
+  if(data) mount(data);
+}
+
+function reportHeight(){
+  requestAnimationFrame(()=>{
+    window.openai?.notifyIntrinsicHeight?.({height:document.documentElement.scrollHeight});
+  });
+}
+
 function makeTerm(segment){
   const n=normalize(segment); const term=document.createElement("span");
   term.className="term"; term.tabIndex=0; term.setAttribute("role","button");
@@ -52,6 +69,9 @@ function makeTerm(segment){
 }
 
 function mount(data){
+  if(!data||!Array.isArray(data.paragraphs))return;
+  if(mountedReadingId===data.id&&app.querySelector(".reading"))return;
+  mountedReadingId=data.id||"reading";
   app.className=""; app.replaceChildren();
   const shell=document.createElement("section"); shell.className="reading";
   if(data.intro){const intro=document.createElement("p");intro.className="intro";intro.textContent=data.intro;shell.append(intro)}
@@ -74,13 +94,24 @@ function mount(data){
   });
   document.onclick=e=>{if(e.target instanceof Element&&!e.target.closest(".term")&&!e.target.closest(".tip"))hide()};
   window.onresize=()=>requestAnimationFrame(position);
+  reportHeight();
 }
+
+hydrateFromOpenAI();
+setTimeout(hydrateFromOpenAI,0);
+setTimeout(hydrateFromOpenAI,250);
+setTimeout(hydrateFromOpenAI,1000);
 
 (async()=>{
   try{
-    await request("ui/initialize",{appInfo:{name:"chappie-reading",version:"0.2.0"},appCapabilities:{},protocolVersion:"2026-01-26"});
+    await request("ui/initialize",{appInfo:{name:"chappie-reading",version:"0.2.0"},appCapabilities:{availableDisplayModes:["inline"]},protocolVersion:"2026-01-26"});
     notify("ui/notifications/initialized",{});
-  }catch(error){console.error("Chappie reading bridge initialization failed",error);app.textContent="Unable to initialize the Chappie reading component."}
+    hydrateFromOpenAI();
+  }catch(error){
+    console.error("Chappie reading bridge initialization failed",error);
+    hydrateFromOpenAI();
+    if(!mountedReadingId){app.textContent="Unable to initialize the Chappie reading component."}
+  }
 })();
 </script>
 </body>
