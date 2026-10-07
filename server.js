@@ -12,13 +12,13 @@ import { toNodeHandler } from "@modelcontextprotocol/node";
 import { z } from "zod";
 
 const READING_URI = "ui://chappie/reading-v5.html";
-const REVIEW_URI = "ui://chappie/review-v4.html";
+const REVIEW_URI = "ui://chappie/review-v5.html";
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
 const readingHtmlTemplate = readFileSync(path.join(rootDir, "public/mcp-reading-widget.html"), "utf8");
 const reviewHtmlTemplate = readFileSync(path.join(rootDir, "public/mcp-review-widget.html"), "utf8");
 const readingScript = readFileSync(path.join(rootDir, "public/chappie-reading-v3.js"), "utf8");
-const reviewScript = readFileSync(path.join(rootDir, "public/chappie-review-v2.js"), "utf8");
+const reviewScript = readFileSync(path.join(rootDir, "public/chappie-review-v3.js"), "utf8");
 
 function inlineModule(template, externalSrc, source) {
   const tag = `<script type="module" src="${externalSrc}"></script>`;
@@ -80,6 +80,8 @@ const reviewSchema = z.object({
   id: z.string().min(1),
   title: z.string().optional(),
   intro: z.string().optional(),
+  sourceContext: z.string().optional(),
+  learningGoals: z.array(z.string()).optional(),
   questions: z.array(questionSchema),
 });
 
@@ -113,7 +115,7 @@ function createChappieServer() {
         uri: REVIEW_URI,
         mimeType: RESOURCE_MIME_TYPE,
         text: reviewHtml,
-        _meta: resourceMeta("Interactive retrieval-practice review with semantic free-text handoff."),
+        _meta: resourceMeta("Interactive retrieval-practice review with detailed semantic feedback."),
       }],
     };
   });
@@ -137,7 +139,7 @@ function createChappieServer() {
 
   registerAppTool(server, "render_review", {
     title: "Render interactive review",
-    description: "Render a Chappie retrieval-practice review. Multiple choice may be locally graded; free-text answers must be semantically reviewed by the model rather than exact-string graded.",
+    description: "Render a Chappie retrieval-practice review. Multiple choice may be locally graded; free-text answers must be semantically reviewed rather than exact-string graded. When the review follows a reading or lesson, include sourceContext with the passage or concise source facts needed for a later detailed review, and include learningGoals when useful.",
     inputSchema: z.object({ review: reviewSchema }),
     outputSchema: z.object({ review: reviewSchema }),
     _meta: {
@@ -147,7 +149,7 @@ function createChappieServer() {
   }, async ({ review }) => {
     console.log("[tool] render_review");
     return {
-      content: [{ type: "text", text: `Interactive review: ${review.title || review.id}. Free-text answers should be discussed semantically after submission.` }],
+      content: [{ type: "text", text: `Interactive review: ${review.title || review.id}. Free-text answers should receive detailed semantic feedback after submission.` }],
       structuredContent: { review },
     };
   });
